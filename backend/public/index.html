@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Scam Detection</title>
+</head>
+
+
+<body>
+    <h1>Scam Detection</h1>
+    <p>Enter the url of the website to check if it is scam or not</p>
+    <input type="text" id="userInput" placeholder="enter url" />
+    <br><br>
+    <button type="submit" onclick="checkScam()">Submit</button>
+    <p id="result"></p>
+    <script>
+        // function checkScam() {
+        //     let userText = document.getElementById("userInput").value;
+        //     fetch("https://localhost:3000/check-scam", {
+        //         method: "POST",
+        //         headers: {
+        //             "Content-Type": "application/json"
+        //         },
+        //         body: JSON.stringify({
+        //             text: userText
+        //         })
+        //     })
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             document.getElementById("result").innerText = data.result;
+        //         })
+        // }
+        function checkScam() {
+            let userText = document.getElementById("userInput").value;
+
+            fetch("http://localhost:3000/check-scam", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    text: userText
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("result").innerText = data.result;
+                });
+        }
+    </script>
+</body>
+
+</html>

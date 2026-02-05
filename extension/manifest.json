@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Scam Website Detector",
+  "version": "1.0",
+  "description": "Detect scam websites using AI",
+  "permissions": ["tabs", "activeTab"],
+  "host_permissions": ["http://localhost:5000/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
