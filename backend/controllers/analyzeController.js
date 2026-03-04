@@ -3,7 +3,7 @@ const axios = require("axios");
 async function getMLPrediction(features) {
     try {
         const response = await axios.post(
-            "http://127.0.0.1:8001/predict", // ✅ FIXED
+            process.env.ML_SERVICE_URL || "http://127.0.0.1:8001/predict", // ✅ FIXED
             features,
             { timeout: 5000 }
         );
