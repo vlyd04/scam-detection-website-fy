@@ -6,6 +6,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
   const analyzeUrl = async () => {
     if (!url.trim()) {
@@ -18,16 +19,26 @@ function App() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
+      if (!apiBaseUrl) {
+        throw new Error("VITE_API_URL is not set");
+      }
+
+      const response = await fetch(`${apiBaseUrl}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
 
       if (!response.ok) {
-        throw new Error(data.error || "Analysis failed");
+        if (typeof data === "string") {
+          throw new Error(`Backend error (${response.status})`);
+        }
+        throw new Error(data.error || `Analysis failed (${response.status})`);
       }
 
       setResult(data);
