@@ -1,154 +1,5 @@
-// import { useState } from "react";
-
-// function App() {
-//   const [url, setUrl] = useState("");
-//   const [analysis, setUrlAnalysis]=useState(null);
-//   const [error, setError]=useState("");
-//   const [domainAge, setDomainAge]=useState(null);
-//   const [contentAnalysis, setContentAnalysis] = useState(null);
-//   const [scamResult, setScamResult] = useState(null);
-
-
-
-//   const analyzeUrl = async () => {
-//   setError("");
-//   setUrlAnalysis(null);
-//   setDomainAge(null);
-  
-
-//   try {
-//     const response = await fetch("http://localhost:3000/analyze", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ url })
-//     });
-
-//     const data = await response.json();
-
-//     if (data.error) {
-//       setError(data.error);
-//       return;
-//     }
-
-//     setUrlAnalysis(data.urlAnalysis);
-//     setDomainAge(data.domainAge);
-//     setContentAnalysis(data.contentAnalysis);
-//     setScamResult(data.scamResult);
-
-
-
-//   } catch {
-//     setError("Backend server not reachable");
-//   }
-// };
-
-//   return (
-//     <div style={{ padding: "40px", fontFamily: "Arial" }}>
-//       <h1>Scam Website Detector</h1>
-
-//       <input
-//         type="text"
-//         placeholder="Enter website URL"
-//         value={url}
-//         onChange={(e) => setUrl(e.target.value)}
-//         style={{ width: "400px", padding: "8px" }}
-//       />
-
-//       <br /><br />
-
-//       <button onClick={analyzeUrl} style={{ padding: "8px 20px" }}>
-//         Analyze
-//       </button>
-
-
-//       {error && <p style={{ marginTop: "20px" }}>{error}</p>}
-//       {analysis &&(
-//         <div style={{marginTop:"20px"}}>
-//           <h3>URL Analysis Result</h3>
-//           <ul>
-//             <li>URL Length: {analysis.length}</li>
-//             <li>Uses HTTPS: {analysis.hasHttps ? "Yes" : "No"}</li>
-//             <li>IP Address Used: {analysis.hasIp?"Yes":"No"}</li>
-//             <li>Hyphen Count:{analysis.hyphenCount}</li>
-//             <li>Suspicious TLD:{analysis.suspiciousTld ? "Yes":"No"}</li>
-//           </ul>
-//         </div>
-//       )}
-//       {domainAge && (
-//   <div style={{ marginTop: "20px" }}>
-//     <h3>Domain Age (WHOIS)</h3>
-//     {domainAge.error ? (
-//       <p>{domainAge.error}</p>
-//     ) : (
-//       <ul>
-//         <li>Creation Date: {domainAge.creationDate}</li>
-//         <li>Domain Age (days): {domainAge.ageInDays}</li>
-//         <li>
-//           New Domain:{" "}
-//           {domainAge.isNewDomain ? "Yes (Suspicious)" : "No (Trusted)"}
-//           {domainAge.warning && (
-//   <p style={{ color: "orange" }}>{domainAge.warning}</p>
-// )}
-// {contentAnalysis && (
-//   <div style={{ marginTop: "20px" }}>
-//     <h3>Website Content Analysis</h3>
-
-//     {contentAnalysis.error ? (
-//       <p>{contentAnalysis.error}</p>
-//     ) : (
-//       <ul>
-//         <li>Scam Keywords Found: {contentAnalysis.keywordCount}</li>
-//         <li>
-//           Password Field Present:{" "}
-//           {contentAnalysis.hasPasswordInput ? "Yes (Risky)" : "No"}
-//         </li>
-//         <li>
-//           Payment-related Words:{" "}
-//           {contentAnalysis.hasPaymentWords ? "Yes (Risky)" : "No"}
-
-//         </li>
-//         <li>{contentAnalysis?.blocked && (
-//   <p style={{ color: "orange" }}>
-//     ⚠️ Website blocked automated inspection (suspicious)
-//   </p>
-// )}
-// </li>
-//       </ul>
-//     )}
-//   </div>
-// )}
-
-
-//         </li>
-//       </ul>
-//     )}
-//   </div>
-// )}
-
-// {scamResult && (
-//   <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #ccc" }}>
-//     <h2>Final Scam Assessment</h2>
-//     <p><strong>Scam Score:</strong> {scamResult.score} / 100</p>
-//     <p><strong>Verdict:</strong> {scamResult.verdict}</p>
-
-//     <h4>Reasons:</h4>
-//     <ul>
-//       {scamResult.reasons.map((reason, index) => (
-//         <li key={index}>{reason}</li>
-//       ))}
-//     </ul>
-//   </div>
-// )}
-
-      
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
 import { useState } from "react";
+import "./App.css";
 
 function App() {
   const [url, setUrl] = useState("");
@@ -157,6 +8,11 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const analyzeUrl = async () => {
+    if (!url.trim()) {
+      setError("Please enter a URL");
+      return;
+    }
+
     setError("");
     setResult(null);
     setLoading(true);
@@ -171,68 +27,215 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Analysis failed");
-        setLoading(false);
-        return;
+        throw new Error(data.error || "Analysis failed");
       }
 
       setResult(data);
-      setLoading(false);
-
     } catch (err) {
-      setError("Backend server not reachable");
+      setError(err.message || "Backend not reachable");
+    } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      analyzeUrl();
+    }
+  };
+
+  const getVerdictClass = (verdict) => {
+    if (verdict === "Likely Scam") return "verdict-danger";
+    if (verdict === "Suspicious") return "verdict-warning";
+    return "verdict-safe";
+  };
+
+  const getRiskClass = (score) => {
+    if (score >= 70) return "risk-high";
+    if (score >= 40) return "risk-medium";
+    return "risk-low";
+  };
+
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>Scam Website Detector</h1>
+    <div className="app-container">
+      <div className="content-wrapper">
+        {/* Header Section */}
+        <header className="header">
+          <div className="icon-shield">🛡️</div>
+          <h1 className="title">Scam Website Detector</h1>
+          <p className="subtitle">
+            Protect yourself from phishing and scam websites with AI-powered analysis
+          </p>
+        </header>
 
-      <input
-        type="text"
-        placeholder="Enter website URL"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        style={{ width: "400px", padding: "8px" }}
-      />
-
-      <br /><br />
-
-      <button onClick={analyzeUrl} style={{ padding: "8px 20px" }}>
-        Analyze
-      </button>
-
-      {loading && <p>Analyzing website…</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {result && (
-        <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #ccc" }}>
-          <h2>Scam Analysis Result</h2>
-
-          <p>
-            <strong>Verdict:</strong>{" "}
-            <span
-              style={{
-                color:
-                  result.verdict === "Likely Scam"
-                    ? "red"
-                    : result.verdict === "Suspicious"
-                    ? "orange"
-                    : "green"
-              }}
+        {/* Input Section */}
+        <div className="input-section">
+          <div className="input-wrapper">
+            <input
+              type="text"
+              placeholder="Enter website URL (e.g., https://example.com)"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="url-input"
+              disabled={loading}
+            />
+            <button 
+              onClick={analyzeUrl} 
+              className="analyze-button"
+              disabled={loading}
             >
-              {result.verdict}
-            </span>
-          </p>
-
-          <p><strong>Risk Score:</strong> {result.riskScore} / 100</p>
-          <p>
-            <strong>AI Confidence:</strong>{" "}
-            {(result.ml_probability * 100).toFixed(2)}%
-          </p>
+              {loading ? (
+                <>
+                  <span className="spinner"></span>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <span className="button-icon">🔍</span>
+                  Analyze URL
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-message fade-in">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
+        )}
+
+        {/* Results Section */}
+        {result && (
+          <div className="results-container fade-in">
+            {/* Verdict Card */}
+            <div className={`verdict-card ${getVerdictClass(result.verdict)}`}>
+              <div className="verdict-icon">
+                {result.verdict === "Likely Scam" && "🚨"}
+                {result.verdict === "Suspicious" && "⚠️"}
+                {result.verdict === "Likely Safe" && "✅"}
+              </div>
+              <h2 className="verdict-title">Analysis Complete</h2>
+              <div className="verdict-label">{result.verdict}</div>
+            </div>
+
+            {/* Risk Score Progress Bar */}
+            <div className="score-section">
+              <div className="score-header">
+                <span className="score-label">Risk Score</span>
+                <span className={`score-value ${getRiskClass(result.riskScore)}`}>
+                  {result.riskScore}/100
+                </span>
+              </div>
+              <div className="progress-bar">
+                <div 
+                  className={`progress-fill ${getRiskClass(result.riskScore)}`}
+                  style={{ width: `${result.riskScore}%` }}
+                >
+                  <span className="progress-text">{result.riskScore}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ML Confidence */}
+            <div className="metric-card">
+              <div className="metric-header">
+                <span className="metric-icon">🤖</span>
+                <span className="metric-title">ML Confidence</span>
+              </div>
+              <div className="metric-value">
+                {(result.ml_probability * 100).toFixed(2)}%
+              </div>
+              <div className="confidence-bar">
+                <div 
+                  className="confidence-fill"
+                  style={{ width: `${(result.ml_probability * 100).toFixed(0)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Analysis Method */}
+            {result.analysis && result.analysis.method && (
+              <div className="info-card">
+                <div className="info-header">
+                  <span className="info-icon">⚙️</span>
+                  Analysis Method
+                </div>
+                <div className="info-content">
+                  <span className="method-badge">{result.analysis.method}</span>
+                  {result.analysis.heuristic_adjustment !== 0 && (
+                    <span className="adjustment-text">
+                      Adjusted {result.analysis.heuristic_adjustment > 0 ? "+" : ""}
+                      {(result.analysis.heuristic_adjustment * 100).toFixed(1)}% 
+                      based on pattern detection
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Applied Rules */}
+            {result.analysis?.applied_rules?.length > 0 && (
+              <div className="rules-card">
+                <div className="rules-header">
+                  <span className="rules-icon">📋</span>
+                  Detection Patterns Identified
+                </div>
+                <ul className="rules-list">
+                  {result.analysis.applied_rules.map((rule, idx) => (
+                    <li key={idx} className="rule-item">
+                      <span className="rule-bullet">•</span>
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Explanation Section */}
+            {result.explanation?.top_features?.length > 0 && (
+              <div className="explanation-card">
+                <div className="explanation-header">
+                  <span className="explanation-icon">💡</span>
+                  Why This Result?
+                </div>
+                <div className="features-grid">
+                  {result.explanation.top_features.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className={`feature-item ${
+                        item.direction === "increase_risk" 
+                          ? "feature-risk" 
+                          : "feature-safe"
+                      }`}
+                    >
+                      <span className="feature-indicator">
+                        {item.direction === "increase_risk" ? "↑" : "↓"}
+                      </span>
+                      <div className="feature-content">
+                        <strong className="feature-name">{item.feature}</strong>
+                        <span className="feature-impact">
+                          {item.direction === "increase_risk"
+                            ? "Increased risk"
+                            : "Reduced risk"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="footer">
+          <p>🔒 Powered by Machine Learning & Heuristic Analysis</p>
+        </footer>
+      </div>
     </div>
   );
 }

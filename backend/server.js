@@ -1,9 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const { URL } = require("url");
-const calculateScamScore = require("./utils/scamScore");
 const extractFeatures = require("./utils/extractFeatures");
 const { getMLPrediction } = require("./controllers/analyzeController");
+const applyScamHeuristics = require("./utils/scamHeuristics");
 const axios = require("axios");
 
 
@@ -61,15 +60,19 @@ app.post("/analyze", async (req, res) => {
 
         console.log("Received ML result:", mlResult);
 
+        // Apply hybrid approach: ML + Rule-based heuristics
+        const hybridResult = applyScamHeuristics(
+            features,
+            mlResult.prediction,
+            mlResult.confidence
+        );
 
-        let riskScore = 0;
+        console.log("Hybrid result:", hybridResult);
 
-        if (mlResult.probability > 0.8) riskScore += 60;
-        else if (mlResult.probability > 0.6) riskScore += 40;
-        else if (mlResult.probability > 0.4) riskScore += 20;
+        const confidence = hybridResult.finalConfidence;
+        const riskScore = Math.round(confidence * 100);
 
         console.log("Sending response to frontend");
-
 
         res.json({
             verdict:
@@ -78,8 +81,21 @@ app.post("/analyze", async (req, res) => {
                     : riskScore >= 40
                         ? "Suspicious"
                         : "Likely Legit",
+
             riskScore,
-            ml_probability: mlResult.probability
+            ml_probability: confidence,
+
+            // Include hybrid analysis details
+            analysis: {
+                method: hybridResult.method,
+                ml_confidence: hybridResult.originalConfidence,
+                heuristic_adjustment: hybridResult.heuristicBoost,
+                applied_rules: hybridResult.appliedRules
+            },
+
+            explanation: {
+                top_features: mlResult.explanations
+            }
         });
 
     } catch (err) {

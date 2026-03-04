@@ -1,16 +1,33 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI
+from pydantic import BaseModel
+from predict import predict_with_explanation
 
-app = Flask(__name__)
+app = FastAPI(title="Scam Detection ML Service")
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.json
-    url = data.get("url", "")
+# ---- Input schema ----
+class URLFeatures(BaseModel):
+    url_length: int
+    digit_count: int
+    special_char_count: int
+    has_ip: int
+    subdomain_count: int
+    has_https: int
+    suspicious_tld: int
+    domain_age_days: int
+    keyword_density: float
+    has_password_input: int
+    url_entropy: float
+    brand_misuse: int
+    path_depth: int
+    redirect_count: int
 
-    return jsonify({
-        "prediction": "unknown",
-        "confidence": 0.0
-    })
 
-if __name__ == "__main__":
-    app.run(port=8000)
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
+@app.post("/predict")
+def predict(features: URLFeatures):
+    result = predict_with_explanation(features.dict())
+    return result

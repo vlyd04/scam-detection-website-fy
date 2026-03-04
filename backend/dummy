@@ -1,3 +1,45 @@
+const whois = require("whois-json");
+
+async function getDomainAge(domain) {
+    try {
+        const data = await whois(domain);
+
+        const creationDateRaw =
+            data.creationDate ||
+            data.created ||
+            data.registered ||
+            data["Creation Date"];
+
+        if (!creationDateRaw) {
+            return {
+                creationDate: null,
+                ageInDays: null,
+                isNewDomain: true,
+                warning: "Domain creation date hidden or unavailable"
+            };
+        }
+
+        const creationDate = new Date(creationDateRaw);
+        const today = new Date();
+
+        const ageInDays = Math.floor(
+            (today - creationDate) / (1000 * 60 * 60 * 24)
+        );
+
+        return {
+            creationDate: creationDate.toDateString(),
+            ageDays: ageInDays,
+            isNewDomain: ageInDays < 180
+        };
+
+    } catch {
+        return { error: "WHOIS lookup failed" };
+    }
+}
+
+module.exports = getDomainAge;
+
+
 const axios = require("axios");
 const cheerio = require("cheerio");
 
@@ -16,43 +58,24 @@ const scamKeywords = [
 
 async function analyzeWebsiteContent(url) {
     try {
-        console.log(`  [CONTENT] Fetching: ${url}`);
         const response = await axios.get(url, {
             timeout: 10000,
             maxRedirects: 5,
             headers: {
                 "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-                "Cache-Control": "no-cache"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120"
             },
             validateStatus: () => true
         });
 
-        console.log(`  [CONTENT] Response status: ${response.status}`);
-
         if (response.status >= 400) {
-            console.log(`  [CONTENT] HTTP ${response.status} - access blocked`);
             return {
                 error: "Website blocked automated access",
-                blocked: true,
-                keywordDensity: 0,
-                hasPassword: 0
+                blocked: true
             };
         }
 
         const html = response.data;
-        if (!html || html.length === 0) {
-            console.log(`  [CONTENT] Empty response body`);
-            return {
-                keywordDensity: 0,
-                hasPassword: 0,
-                keywordMatches: [],
-                contentFetched: false
-            };
-        }
-
         const $ = cheerio.load(html);
         const text = $("body").text().toLowerCase();
 
@@ -63,8 +86,6 @@ async function analyzeWebsiteContent(url) {
         const hasPassword = html.includes('type="password"') ||
             html.includes("type='password'");
 
-        console.log(`  [CONTENT] Found ${foundKeywords.length} scam keywords, has_password: ${hasPassword ? 1 : 0}`);
-
         return {
             keywordDensity: foundKeywords.length / scamKeywords.length,
             hasPassword: hasPassword ? 1 : 0,
@@ -73,12 +94,9 @@ async function analyzeWebsiteContent(url) {
         };
 
     } catch (err) {
-        console.error(`  [CONTENT] Error fetching ${url}:`, err.message);
         return {
             error: "Website not reachable or blocked",
-            blocked: true,
-            keywordDensity: 0,
-            hasPassword: 0
+            blocked: true
         };
     }
 }

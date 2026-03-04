@@ -73,3 +73,10 @@ venv/
 *.swp
 *.swo
 *.tmp
+
+# Generated artifacts and dataset archives
+ml-service/*roc_curve*.png
+ml-service/*confusion_matrix*.png
+*bar chart*.png
+backend/data/*backup_*.csv
+backend/dataset/*_archived_*.txt

@@ -1,12 +1,12 @@
 const axios = require("axios");
 
+const ML_SERVICE_URL = "http://localhost:8001/predict";
+
 async function getMLPrediction(features) {
     try {
-        const response = await axios.post(
-            "http://127.0.0.1:8001/predict", // ✅ FIXED
-            features,
-            { timeout: 5000 }
-        );
+        const response = await axios.post(ML_SERVICE_URL, features, {
+            timeout: 5000
+        });
         return response.data;
     } catch (err) {
         console.error("ML service error:", err.message);
