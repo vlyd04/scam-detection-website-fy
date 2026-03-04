@@ -76,9 +76,9 @@ app.post("/analyze", async (req, res) => {
 
         res.json({
             verdict:
-                riskScore >= 70
+                riskScore >= 85
                     ? "Likely Scam"
-                    : riskScore >= 40
+                    : riskScore >= 60
                         ? "Suspicious"
                         : "Likely Legit",
 
